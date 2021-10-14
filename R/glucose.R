@@ -78,6 +78,7 @@ psi_fill_glucose_records_from_scratch <- function(conn_args = config::get("datac
 #' Assumes it's a valid file if it has the string "glucose" in its name.
 #' @param path file path to a directory of libreview CSV files.
 #' @return dataframe including `user_id` matching those for data in the notes_records
+#' @import magrittr
 #' @export
 load_libreview_csv_from_directory <- function(path = config::get("tastermonial")$datadir) {
 
