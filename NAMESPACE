@@ -3,6 +3,7 @@
 export(load_libreview_csv_from_directory)
 export(name_for_user_id)
 export(name_from_libreview_file)
+export(taster_db)
 export(user_df_from_db)
 export(user_df_from_libreview)
 export(user_id_for_name)

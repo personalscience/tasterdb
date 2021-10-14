@@ -2,7 +2,7 @@
 % Please edit documentation in R/db_create.R
 \name{psi_make_table_with_index}
 \alias{psi_make_table_with_index}
-\title{Make a new database tables with \code{index}}
+\title{Show table as a dataframe}
 \usage{
 psi_make_table_with_index(
   conn_args = config::get("dataconnection"),
@@ -21,8 +21,10 @@ psi_make_table_with_index(
 \item{index}{(list) table column to be used for index}
 }
 \value{
+dataframe
+
 NULL if table already exists. Otherwise creates the table and returns TRUE invisibly.
 }
 \description{
-Make a new database tables with \code{index}
+Read contents of \code{table} from the database and return it as a dataframe
 }

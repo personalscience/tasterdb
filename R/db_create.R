@@ -33,44 +33,32 @@
 # Sys.setenv(R_CONFIG_ACTIVE = "cloud")
 
 
-#' List all objects in the current PSI database
-#' @import DBI
-psi_list_objects <-
-  function(conn_args = config::get("dataconnection")) {
-    con <- DBI::dbConnect(
-      drv = conn_args$driver,
-      user = conn_args$user,
-      host = conn_args$host,
-      port = conn_args$port,
-      dbname = conn_args$dbname,
-      password = conn_args$password
-    )
 
-  dbName <- conn_args$dbname
-  dbHost <- conn_args$host
+#' @title Create a database object
+#' @description With this object, there is no need to keep track of database connections in order to access
+#' the Tastermonial database. Once initialized, you simply use the `$` methods to pull the glucose and notes
+#' records results. If the database doesn't exist, initializing this object will create it for you.
+#' @param db_config string name of configuration to be used  for this instance.
+#' @import DBI magrittr dplyr
+#' @export
+taster_db <- function(db_config = "default") {
 
-  objects <- DBI::dbListObjects(con)
-  tables <- DBI::dbListTables(con)
-
-  DBI::dbDisconnect(con)
-  return(list(dbName=dbName, dbHost=dbHost, objects=objects, tables=tables))
-
-}
-
-
-#' Make new Postgres database if one doesn't already exist.
-#' @param conn_args a valid database connection (assumes Postgres)
-#' @import DBI
-psi_make_database_if_necessary <- function(conn_args = config::get("dataconnection")) {
+  conn_args = config::get(value = "dataconnection", config = db_config)
   con <- DBI::dbConnect(
     drv = conn_args$driver,
     user = conn_args$user,
     host = conn_args$host,
     port = conn_args$port,
-   # dbname = conn_args$dbname,
+    # dbname = conn_args$dbname,
     password = conn_args$password
   )
 
+  GLUCOSE_DATA_FRAME <-
+    tibble(timestamp=lubridate::now(), scan = 0.0, hist = 0.0, strip = 0.0, value = 0.0, food = "", user_id = 0.0)
+  NOTES_DATA_FRAME <-
+    tibble(Start=lubridate::now(), End =lubridate::now(), Activity = "Event", Comment = NA, Z = NA, user_id = 0)
+  USER_DATA_FRAME <-
+    tibble(first_name = "first", last_name = "last", birthdate = as.Date("1900-01-01"), libreview_status = as.character(NA), user_id = 0)
 
   newdb_sqlstring <-
     paste0(
@@ -86,15 +74,67 @@ psi_make_database_if_necessary <- function(conn_args = config::get("dataconnecti
   ## Add a new database "qsdb" if none exists on this server
   if (conn_args$dbname %in%
       DBI::dbGetQuery(con, "SELECT datname FROM pg_database WHERE datistemplate = false;")$datname)
-    { message("database already exists")
-    return(NULL)
-  } else
-    DBI::dbSendQuery(con, newdb_sqlstring)
+  { message("database already exists")
+    DBI::dbDisconnect(con)
 
-  # Now that qsdb is available, use that as the database for everything
-  DBI::dbDisconnect(con)
+  } else {
+    DBI::dbSendQuery(con, newdb_sqlstring)
+    psi_make_table_with_index(conn_args = conn_args,
+                              table_name = "glucose_records",
+                              table = GLUCOSE_DATA_FRAME,
+                              index = "timestamp")
+    psi_make_table_with_index(conn_args = conn_args,
+                              table_name = "notes_records",
+                              table = NOTES_DATA_FRAME,
+                              index = "Comment")
+  }
+
+  con <- DBI::dbConnect(
+    drv = conn_args$driver,
+    user = conn_args$user,
+    host = conn_args$host,
+    port = conn_args$port,
+    dbname = conn_args$dbname,
+    password = conn_args$password
+  )
+
+  thisEnv <- environment()
+
+
+  db <- list(
+    thisEnv = thisEnv,
+    con = con,
+    glucose_records = dplyr::tbl(con, "glucose_records"),
+    notes_records = dplyr::tbl(con, "notes_records"),
+    notes_records_df = function() {
+      collect(tbl(con, "notes_records"))
+    },
+    list_objects = function() {
+      dbName <- conn_args$dbname
+      dbHost <- conn_args$host
+
+      objects <- DBI::dbListObjects(con)
+      tables <- DBI::dbListTables(con)
+      return(list(dbName=dbName, dbHost=dbHost, objects=objects, tables=tables))
+    },
+    #' @describeIn  table_df returns a valid table
+    table_df = function(table_name = "glucose_records") {
+      dplyr::collect(dplyr::tbl(con, table_name))
+    }
+  )
+
+
+
+  ## Define the value of the list within the current environment.
+  assign('this',db,envir=thisEnv)
+
+  structure(db, class = "data.frame",
+            con  = con )
 
 }
+
+
+
 
 #' @title Make new database tables if necessary
 #' @param conn_args connection
@@ -134,25 +174,6 @@ psi_make_table_if_necessary <- function(conn_args = config::get("dataconnection"
 #' @param table_name character string of the table name (default: `glucose_records`)
 #' @import DBI
 #' @return dataframe
-psi_table_df <-
-  function(conn_args = config::get("dataconnection"),
-           table_name = "glucose_records") {
-    con <- DBI::dbConnect(
-      drv = conn_args$driver,
-      user = conn_args$user,
-      host = conn_args$host,
-      port = conn_args$port,
-      dbname = conn_args$dbname,
-      password = conn_args$password
-    )
-
-    table_df <- tbl(con, table_name) %>% collect()
-
-    DBI::dbDisconnect(con)
-
-    return(table_df)
-
-  }
 
 
 #' @title Make a new database tables with `index`
@@ -164,7 +185,7 @@ psi_table_df <-
 #' @return NULL if table already exists. Otherwise creates the table and returns TRUE invisibly.
 psi_make_table_with_index <- function(conn_args = config::get("dataconnection"),
                                       table_name = "experiments",
-                                      table = NULL,
+                                      table = NULL, # a dataframe
                                       index = NULL
                                       ){
   con <- DBI::dbConnect(
@@ -182,7 +203,7 @@ psi_make_table_with_index <- function(conn_args = config::get("dataconnection"),
 
     message(sprintf("Writing new table %s with index %s", table_name, index))
     # Lets you create an index
-    dplyr::copy_to(con, experiments, name = table_name, index = index, temporary = FALSE)
+    dplyr::copy_to(con, df = table, name = table_name, index = index, temporary = FALSE)
   }
 
   DBI::dbDisconnect(con)
