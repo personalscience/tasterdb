@@ -3,12 +3,11 @@
 
 #' @title Write a glucose dataframe to the database
 #' @description
-#' WARNING: always delete the table before running this on a `user_id` that's already in the database.
 #' (it's not finished yet and doesn't take into account previous entries)
+#' @import  dplyr
+#' @importFrom magrittr %>%
 #' @param new_table valid formatted glucose dataframe
-psi_write_glucose <- function(conn_args = config::get("dataconnection"),
-                              user_id = 1235,
-                              new_table=glucose_df_from_libreview_csv(user_id = 1235)) {
+write_glucose <- function(new_table) {
 
   con <- DBI::dbConnect(
     drv = conn_args$driver,
@@ -19,43 +18,25 @@ psi_write_glucose <- function(conn_args = config::get("dataconnection"),
     password = conn_args$password
   )
 
-  ID <- user_id
+  new_records <- if (!("timestamp" %in% names(new_table))) {
+    new_table %>% dplyr::rename("timestamp" = "time")
+  } else new_table
 
-  psi_make_table_if_necessary(conn_args = conn_args, table = new_table)
-
-  maxDate <- psiCGM:::max_date_for_user(conn_args, user_id = ID)
-  new_records <-
-    new_table %>% dplyr::filter(time > {if(is.na(maxDate)) min(time) else maxDate}) %>%
-    dplyr::filter(user_id == ID)
-
-
-
-  message("write glucose records")
-
-  # uncomment the following line to do the actual write to db
   DBI::dbWriteTable(con, name = "glucose_records", value = new_records, row.names = FALSE, append = TRUE)
 
   # uncomment the following line
   # DBI::dbWriteTable(con, name = "notes_records", value = notes_records, row.names = FALSE, overwrite = TRUE)
 
 
-  DBI::dbDisconnect(con)
 
 }
 
 #' @title Read all CSV files again and enter them into the database
 #' @return dataframe
-psi_fill_glucose_records_from_scratch <- function(conn_args = config::get("dataconnection"),
+fill_glucose_records_from_scratch <- function(con,
                                                   drop = TRUE) {
 
-  con <- DBI::dbConnect(
-    drv = conn_args$driver,
-    user = conn_args$user,
-    host = conn_args$host,
-    port = conn_args$port,
-    dbname = conn_args$dbname,
-    password = conn_args$password
-  )
+
 
   if(drop) {
     message("removing glucose records table")
@@ -78,7 +59,7 @@ psi_fill_glucose_records_from_scratch <- function(conn_args = config::get("datac
 #' Assumes it's a valid file if it has the string "glucose" in its name.
 #' @param path file path to a directory of libreview CSV files.
 #' @return dataframe including `user_id` matching those for data in the notes_records
-#' @import magrittr
+#' @importFrom magrittr %>%
 #' @export
 load_libreview_csv_from_directory <- function(path = config::get("tastermonial")$datadir) {
 
@@ -92,12 +73,14 @@ load_libreview_csv_from_directory <- function(path = config::get("tastermonial")
     libreview_name <- name_from_libreview_file(f)
     new_tz <-  if (libreview_name %in% exceptions$fullname) {
       new_tz <- filter(exceptions,fullname == libreview_name) %>% pull(timezone)
+      message(sprintf("timezone exception for %s is %s", libreview_name, new_tz))
       if(!is.null(new_tz)) new_tz else Sys.timezone()
     } else Sys.timezone()
     ID <- user_id_for_name(libreview_name)
     message(sprintf("Reading ID = %s", ID))
     g_df <- cgmr::glucose_df_from_libreview_csv(file = f,
                                           user_id = ID)
+    g_df$time <- lubridate::force_tz(g_df$time, tz= new_tz )
     df <- bind_rows(df, g_df)
   }
   return(df)
@@ -105,3 +88,36 @@ load_libreview_csv_from_directory <- function(path = config::get("tastermonial")
   # df %>% group_by(user_id) %>% summarize(n())
 }
 
+#' @title Unified dataframe for all glucose CSV files in `path`
+#' @description
+#' Read glucose files in `path` and return one big dataframe with all glucose values.
+#' @importFrom magrittr %>%
+#' @export
+load_nutrisense_csv_from_directory <- function(path = config::get("tastermonial")$datadir) {
+
+  datafiles <- list.files(path)
+  datafiles <- datafiles[datafiles %>% str_detect("nutrisense")]
+  exceptions <- read_csv(file.path(path,"Tastermonial_Exceptions.csv")) %>% mutate(fullname=paste(first_name, last_name))
+
+  df <- NULL
+  for (d in datafiles) {
+    f <-  file.path(path, d)
+    nutrisense_results <- cgmr::nutrisense_results(f)
+    nutrisense_name <- nutrisense_results[["username"]]
+
+    new_tz <-  if (nutrisense_name %in% exceptions$fullname) {
+      new_tz <- filter(exceptions,fullname == nutrisense_name) %>% pull(timezone)
+      message(sprintf("timezone exception for %s is %s", nutrisense_name, new_tz))
+      if(!is.null(new_tz)) new_tz else Sys.timezone()
+    } else Sys.timezone()
+    ID <- user_id_for_name(nutrisense_name)
+    message(sprintf("Reading ID = %s", ID))
+    g_df <- nutrisense_results[["glucose_raw"]]
+    g_df[["user_id"]] <- ID
+    g_df$time <- lubridate::force_tz(g_df$time, tz= new_tz )
+    df <- bind_rows(df, g_df)
+  }
+  return(df)
+  # count the number of unique user_id like this:
+  # df %>% group_by(user_id) %>% summarize(n())
+}

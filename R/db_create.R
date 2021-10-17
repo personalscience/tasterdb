@@ -1,4 +1,5 @@
 # create_db
+#
 # Use this script only once: to set up the initial database and scheme
 # If your Postgres database is already set up and running, you should be able to simply 'source' this script
 # and it will automatically create the database 'qsdev' and a table 'glucose_records'
@@ -56,7 +57,7 @@ taster_db <- function(db_config = "default") {
   GLUCOSE_DATA_FRAME <-
     tibble(timestamp=lubridate::now(), scan = 0.0, hist = 0.0, strip = 0.0, value = 0.0, food = "", user_id = 0.0)
   NOTES_DATA_FRAME <-
-    tibble(Start=lubridate::now(), End =lubridate::now(), Activity = "Event", Comment = NA, Z = NA, user_id = 0)
+    tibble(Start=lubridate::now(), End =lubridate::now(), Activity = "Event", Comment = "meal", Z = NA, user_id = 0)
   USER_DATA_FRAME <-
     tibble(first_name = "first", last_name = "last", birthdate = as.Date("1900-01-01"), libreview_status = as.character(NA), user_id = 0)
 
@@ -87,6 +88,10 @@ taster_db <- function(db_config = "default") {
                               table_name = "notes_records",
                               table = NOTES_DATA_FRAME,
                               index = "Comment")
+    psi_make_table_with_index(conn_args = conn_args,
+                              table_name = "user_list",
+                              table = USER_DATA_FRAME,
+                              index = "user_id")
   }
 
   con <- DBI::dbConnect(
@@ -104,6 +109,9 @@ taster_db <- function(db_config = "default") {
   db <- list(
     thisEnv = thisEnv,
     con = con,
+    disconnect = function() {
+      DBI::dbDisconnect(con)
+    },
     glucose_records = dplyr::tbl(con, "glucose_records"),
     notes_records = dplyr::tbl(con, "notes_records"),
     notes_records_df = function() {

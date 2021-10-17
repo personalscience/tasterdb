@@ -1,14 +1,60 @@
 # Load database
 
+# Set one of the following environment variables
+# Sys.setenv(R_CONFIG_ACTIVE = "shinyapps")
+#Sys.setenv(R_CONFIG_ACTIVE = "local")  # save to local postgres
+# Sys.setenv(R_CONFIG_ACTIVE = "sandbox")
+# Sys.setenv(R_CONFIG_ACTIVE = "localtest") # a database useful for testing
 
+
+#' @title Load Libreview glucose files from scratch
+#' @param ps_database name of Postgres SQL catalog (aka database)
+#' @export
+load_db <- function(ps_database = "sandbox"){
+
+  db <- taster_db(ps_database)
+
+  # First build the user_list of all users known to the system (and their user_id)
+  write_user_list_from_scratch(con=db$con)
+
+# need an exception for a user who's not on the portal
+
+
+  # psi_user_list_from_scratch(user_list = tibble(first_name = "Anthony", last_name = "Davis", birthdate=as.Date("1900-01-01"),
+  #                                               libreview_status = NA,
+  #                                               user_id = 1021),
+  #                            drop = FALSE)
+  #
+
+
+  fill_glucose_records_from_scratch(con = db$con)
+
+  fill_taster_notes_from_scratch(con = db$con, taster_notes_df = run_taster_notes())
+
+  nutrisense_glucose <- load_nutrisense_csv_from_directory()
+  message("write nutrisense records to glucose_records")
+  DBI::dbWriteTable(db$con, "glucose_records", nutrisense_glucose, append = TRUE)
+
+
+  return(db)
+
+}
 
 psi_make_glucose_table_with_index <- function (glucose_table) {
+  conn_args = config::get("dataconnection")
+  con <- DBI::dbConnect(
+    drv = conn_args$driver,
+    user = conn_args$user,
+    host = conn_args$host,
+    port = conn_args$port,
+    dbname = conn_args$dbname,
+    password = conn_args$password
+  )
 
-
-psi_make_table_with_index(table_name = "glucose_records",
-                          table = glucose_table,
-                          index = list("timestamp")
-)
+  psi_make_table_with_index(table_name = "glucose_records",
+                            table = glucose_table,
+                            index = list("timestamp")
+  )
 
 }
 
@@ -162,111 +208,7 @@ psi_fill_database_from_scratch <- function(conn_args = config::get("dataconnecti
 }
 
 
-#' @title Read all CSV files again and enter them into the database
-#' @return dataframe
-psi_fill_glucose_records_from_scratch <- function(conn_args = config::get("dataconnection"),
-                                                  drop = TRUE) {
-
-  con <- DBI::dbConnect(
-    drv = conn_args$driver,
-    user = conn_args$user,
-    host = conn_args$host,
-    port = conn_args$port,
-    dbname = conn_args$dbname,
-    password = conn_args$password
-  )
-
-  if(drop) {
-    message("removing glucose records table")
-    DBI::dbRemoveTable(con, "glucose_records")
-  }
-
-  all_glucose_records <- load_libreview_csv_from_directory()
-  DBI::dbWriteTable(con, name = "glucose_records", value = all_glucose_records, row.names = FALSE, overwrite = TRUE)
-
-  return(all_glucose_records)
-
-}
 
 
-#' Nuke all notes records and start over
-psi_fill_notes_records_from_scratch <- function(conn_args = config::get("dataconnection"),
-                                                drop = TRUE) {
-
-  con <- DBI::dbConnect(
-    drv = conn_args$driver,
-    user = conn_args$user,
-    host = conn_args$host,
-    port = conn_args$port,
-    dbname = conn_args$dbname,
-    password = conn_args$password
-  )
-  if(drop) {
-
-    message("removing notes records")
-    DBI::dbRemoveTable(con, "notes_records")
-  }
-
-  message("Write Martha notes")
-
-  martha_notes <- bind_rows(notes_df_from_csv(file = file.path(config::get("tastermonial")$datadir,
-                                                               "MarthaSprague_notes.csv"),
-                                              user_id=1235),
-                            notes_df_from_glucose_table(user_id=1235))
-
-  DBI::dbWriteTable(con, name = "notes_records",
-                    value = martha_notes,
-                    row.names = FALSE,
-                    overwrite = TRUE)
-
-  # message("Write Ayumi notes")
-  # ayumi_notes <-  notes_df_from_glucose_table(user_id=lookup_id_from_name("Ayumi Blystone"))
-  #
-  # DBI::dbWriteTable(con, name = "notes_records",
-  #                   value = ayumi_notes,
-  #                   row.names = FALSE,
-  #                   append = TRUE)
-  #
-  # message("Write Bude notes")
-  # bude_notes <-  notes_df_from_glucose_table(user_id=lookup_id_from_name("Bude Sethaputra"))
-  #
-  # DBI::dbWriteTable(con, name = "notes_records",
-  #                   value = bude_notes,
-  #                   row.names = FALSE,
-  #                   append = TRUE)
-
-  message("Write Richard Notes records (from glucose_records")
-  DBI::dbWriteTable(con, name = "notes_records",
-                    value = notes_df_from_glucose_table(user_id=1234),
-                    row.names = FALSE,
-                    append = TRUE)
-  # psi_write_notes(user_id = 1234, new_table = notes_df_from_glucose_table(user_id = 1234), dry_run = FALSE)
 
 
-}
-
-psi_user_list_from_scratch <- function(conn_args = config::get("dataconnection"),
-                                       user_list = user_df_from_libreview,
-                                       drop = TRUE) {
-
-  con <- DBI::dbConnect(
-    drv = conn_args$driver,
-    user = conn_args$user,
-    host = conn_args$host,
-    port = conn_args$port,
-    dbname = conn_args$dbname,
-    password = conn_args$password
-  )
-  if(drop) {
-
-    message("removing user records")
-    DBI::dbRemoveTable(con, "user_list")
-  }
-
-  DBI::dbWriteTable(con, name = "user_list",
-                    value = user_list,
-                    row.names = FALSE,
-                    append = TRUE)
-
-  message(sprintf("Wrote %d new records to userlist", nrow(user_df_from_libreview)))
-}

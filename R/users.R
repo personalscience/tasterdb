@@ -1,5 +1,25 @@
 # create users
 
+
+write_user_list_from_scratch <- function(con,
+                                       user_list = user_df_from_libreview(),
+                                       drop = TRUE) {
+
+  if(drop) {
+
+    message("removing user records")
+    DBI::dbRemoveTable(con, "user_list")
+  }
+
+  DBI::dbWriteTable(con, name = "user_list",
+                    value = user_list,
+                    row.names = FALSE,
+                    append = TRUE)
+
+  message(sprintf("Wrote %d new records to userlist", nrow(user_df_from_libreview)))
+}
+
+
 #' @title Return user list from Tastermonial Libreview download
 #' @description A Libreview "practice" stores all its user information in a single
 #' CSV file, which this function will convert into a canonical dataframe.
@@ -42,7 +62,7 @@ user_df_from_libreview <- function() {
 
 #' @title All user records in the database
 #' @param conn_args database connection
-#' @import magrittr DBI
+#' @import magrittr DBI dplyr
 #' @return dataframe of all user records
 #' @export
 user_df_from_db <- function(conn_args = config::get("dataconnection")){
@@ -55,7 +75,7 @@ user_df_from_db <- function(conn_args = config::get("dataconnection")){
     password = conn_args$password
   )
 
-  users_df <- DBI::tbl(con, "user_list" ) %>% collect()
+  users_df <- dplyr::tbl(con, "user_list" ) %>% collect()
 
   DBI::dbDisconnect(con)
   return(users_df)

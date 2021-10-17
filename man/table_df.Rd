@@ -4,7 +4,10 @@
 \alias{taster_db}
 \title{Create a database object}
 \usage{
-taster_db()
+taster_db(db_config = "default")
+}
+\arguments{
+\item{db_config}{string name of configuration to be used  for this instance.}
 }
 \description{
 With this object, there is no need to keep track of database connections in order to access
