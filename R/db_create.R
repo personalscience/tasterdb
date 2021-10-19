@@ -80,6 +80,17 @@ taster_db <- function(db_config = "default") {
 
   } else {
     DBI::dbSendQuery(con, newdb_sqlstring)
+  }
+
+  con <- DBI::dbConnect(
+    drv = conn_args$driver,
+    user = conn_args$user,
+    host = conn_args$host,
+    port = conn_args$port,
+    dbname = conn_args$dbname,
+    password = conn_args$password
+  )
+
     psi_make_table_with_index(conn_args = conn_args,
                               table_name = "glucose_records",
                               table = GLUCOSE_DATA_FRAME,
@@ -92,16 +103,9 @@ taster_db <- function(db_config = "default") {
                               table_name = "user_list",
                               table = USER_DATA_FRAME,
                               index = "user_id")
-  }
 
-  con <- DBI::dbConnect(
-    drv = conn_args$driver,
-    user = conn_args$user,
-    host = conn_args$host,
-    port = conn_args$port,
-    dbname = conn_args$dbname,
-    password = conn_args$password
-  )
+
+
 
   thisEnv <- environment()
 

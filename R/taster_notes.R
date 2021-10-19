@@ -126,22 +126,13 @@ fill_taster_notes_from_scratch <- function(con, taster_notes_df, drop = TRUE) {
 
 }
 
-#' @title main function to read notes
+#' @title Read notes from old "typeform" csv
 #' @import  dplyr stringr lubridate
 #' @importFrom magrittr %>%
-#' @export
-run_taster_notes <- function(){
+#' @return dataframe
+taster_old_typeform <- function() {
 
-  message("read table_data.csv")
-  taster_raw_df <- taster_raw(filepath = file.path(config::get("tastermonial")$datadir, "table-data.csv"))
   taster_raw2_df <- taster_raw(filepath = file.path(config::get("tastermonial")$datadir, "FoodLogFireBasetable-data_ingestsept6.csv"))
-  taster_notes_df1 <- taster_raw_df %>% transmute(Start = lubridate::parse_date_time(startEatingDate, orders = c("dmY HM p z", "dmY HM z")),
-                                                  End = as_datetime(NA),
-                                                  Activity = "Food",
-                                                  Comment = str_to_upper(str_squish(str_replace_all(name, "[^A-Za-z,]", " "))),
-                                                  Z = as.numeric(NA),
-                                                  user_id = purrr::map_dbl(user, id_from_taster))
-
   message("process Firebase-formatted data")
   taster_notes2_df <- taster_raw2_df %>% filter(!is.na(user))  %>%
     transmute(Start = lubridate::parse_date_time(startEatingDate,
@@ -153,11 +144,72 @@ run_taster_notes <- function(){
               Z = as.numeric(NA) ,
               user_id = purrr::map_dbl(user, id_from_taster))
 
+  taster_notes2_df$Comment <- map_chr(taster_notes2_df$Comment, taster_classify_food)
+
+  return(taster_notes2_df)
+
+}
+
+#' @title (one-time only) Make a version of the Typeform data with correct timezone info
+#' @description This function should only be needed one time. Use it to write a new file
+#' and have that be the source for future access to the old Typeform data.
+#' @return dataframe
+transform_old_typeform <- function() {
+
+  exceptions <- read_csv(file.path(config::get("tastermonial")$datadir,"Tastermonial_Exceptions.csv")) %>% mutate(fullname=paste(first_name, last_name))
+
+
+  old <- taster_old_typeform()
+  old$username <- old$user_id %>% map_chr(function(x) {name_for_user_id(x)})
+
+  old$tz <- map_chr(old, function(x) {})
+
+  new_tz <-  if (libreview_name %in% exceptions$fullname) {
+    new_tz <- filter(exceptions,fullname == libreview_name) %>% pull(timezone)
+    message(sprintf("timezone exception for %s is %s", libreview_name, new_tz))
+    if(!is.null(new_tz)) new_tz else Sys.timezone()
+  } else Sys.timezone()
+
+}
+
+#' @title Read notes from the iPhone app csv
+#' @description There's no need to correct for time zone because the Retool data is already
+#' timestamped with UTC.
+#' @import  dplyr stringr lubridate
+#' @importFrom magrittr %>%
+#' @return dataframe
+taster_from_retool_csv <- function() {
+  taster_raw_df <- taster_raw(filepath = file.path(config::get("tastermonial")$datadir, "table-data.csv"))
+  taster_notes_df1 <- taster_raw_df %>% transmute(Start = lubridate::parse_date_time(startEatingDate,
+                                                                                     orders = c("dmY HM p z", "dmY HM z")),
+                                                  End = as_datetime(NA),
+                                                  Activity = "Food",
+                                                  Comment = str_to_upper(str_squish(str_replace_all(name, "[^A-Za-z,]", " "))),
+                                                  Z = as.numeric(NA),
+                                                  user_id = purrr::map_dbl(user, id_from_taster))
+
+  taster_notes_df1$Comment <- map_chr(taster_notes_df1$Comment, taster_classify_food)
+
+  return(taster_notes_df1)
+
+}
+
+#' @title main function to read notes
+#' @import  dplyr stringr lubridate
+#' @importFrom magrittr %>%
+#' @export
+run_taster_notes <- function(){
+
+  message("read table_data.csv")
+
+  taster_notes_df1 <- taster_from_retool_csv()
+  taster_notes_from_old_format <- taster_old_typeform()
+
   # TODO taster_notes2_df must correct for time zone.
 
   message("combine notes data")
 
-  taster_notes_df <- bind_rows(taster_notes2_df,taster_notes_df1)
-  taster_notes_df$Comment <- map_chr(taster_notes_df$Comment, taster_classify_food)
+  taster_notes_df <- bind_rows(taster_notes_from_old_format,taster_notes_df1)
+
   return(taster_notes_df)
 }
