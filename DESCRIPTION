@@ -1,6 +1,6 @@
 Package: tasterdb
 Title: Create and Maintain Databases for Tastermonial Projects
-Version: 0.0.2.4
+Version: 0.0.3.0
 Authors@R: 
     person("Richard", "Sprague", , "sprague@personalscience.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-3789-5747"))
@@ -14,3 +14,16 @@ RoxygenNote: 7.1.2
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Depends: 
+    R (>= 2.10)
+Imports: 
+    DBI,
+    config,
+    dplyr,
+    lubridate,
+    cgmr,
+    jsonlite,
+    purrr,
+    readr,
+    stringr,
+    magrittr

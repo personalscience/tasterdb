@@ -1,9 +1,7 @@
 
 
-extra_user_df <- read_csv(file = system.file("extdata",
-                                             package = "psiCGM",
-                                             "Tastermonial_Extra_Users.csv"),
-                          col_types = "cccccd") %>% mutate(birthdate = lubridate::mdy(birthdate))
+extra_user_df <- readr::read_csv(file = file.path(config::get("tastermonial")$datadir, "Tastermonial_Extra_Users.csv"),
+                                                    col_types = "cccccd") %>% dplyr::mutate(birthdate = lubridate::mdy(birthdate))
 
 #' @title Users known to Libreview Practice Portal
 #' @description

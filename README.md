@@ -21,12 +21,24 @@ devtools::install_github("personalscience/tasterdb",
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+To load all the Tastermonial database tables for the local
+configuration:
 
 ``` r
 library(tasterdb)
-## basic example code
+local_db <- load_db("local")
 ```
+
+Because the result is an object, it is strongly recommended to assign
+the function call `load_db()` to its own variable. This lets you use the
+various list methods on it, such as
+
+``` r
+local_db$notes_records # returns a tibble of all notes_records
+local_db$disconnect() # disconnect from the database. After this you should `rm(local_db)`
+```
+
+## Configuration
 
 A directory using this package needs a `config.yml` file. Be sure to
 fill in all the values below correctly:

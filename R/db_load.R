@@ -80,7 +80,12 @@ psi_write_glucose <- function(conn_args = config::get("dataconnection"),
 
   psi_make_table_if_necessary(conn_args = conn_args, table = new_table)
 
-  maxDate <- psiCGM:::max_date_for_user(conn_args, user_id = ID)
+
+  maxDate <- tbl(con, table_name) %>% filter(user_id == ID) %>%
+    filter(time == max(time, na.rm = TRUE)) %>% pull(time)
+
+  maxDate <- if (length(maxDate > 0)) maxDate else NA
+
   new_records <-
     new_table %>% dplyr::filter(time > {if(is.na(maxDate)) min(time) else maxDate}) %>%
     dplyr::filter(user_id == ID)
@@ -165,6 +170,8 @@ psi_write_notes <- function(conn_args = config::get("dataconnection"),
 #' @title Fill database after dropping
 #' @description
 #'  For debugging and dev purposes only. Loads the database tables from scratch.
+#'  @param conn_args database connection
+#'  @param drop nuke the exiting table if true (default)
 #'  @noRd
 psi_fill_database_from_scratch <- function(conn_args = config::get("dataconnection"),
                                            drop = TRUE) {
