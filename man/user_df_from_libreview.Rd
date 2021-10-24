@@ -12,4 +12,9 @@ A dataframe of all users and their ids, taken from the Libreview practice portal
 \description{
 Libreview Practice Portal offers a complete list of the names
 of users who have submitted glucose reports.
+You should rarely, if ever, need to call this except when setting up or modifying the database.
+}
+\seealso{
+\code{\link[=user_df_from_librevew_csv]{user_df_from_librevew_csv()}} for the basic version,
+\code{\link[=user_df_from_db]{user_df_from_db()}} is the one you should almost always call instead of this.
 }

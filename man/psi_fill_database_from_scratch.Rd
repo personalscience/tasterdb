@@ -11,5 +11,7 @@ psi_fill_database_from_scratch(
 }
 \description{
 For debugging and dev purposes only. Loads the database tables from scratch.
+@param conn_args database connection
+@param drop nuke the exiting table if true (default)
 @noRd
 }

@@ -1,8 +1,11 @@
 # create users
 
 
+#' @title writes an entire user list to the database
+#' @param user_list valid user list as a dataframe
+#' @importFrom DBI dbRemoveTable dbWriteTable
 write_user_list_from_scratch <- function(con,
-                                       user_list = user_df_from_libreview(),
+                                       user_list = user_df_from_db(),
                                        drop = TRUE) {
 
   if(drop) {
@@ -23,9 +26,10 @@ write_user_list_from_scratch <- function(con,
 #' @title Return user list from Tastermonial Libreview download
 #' @description A Libreview "practice" stores all its user information in a single
 #' CSV file, which this function will convert into a canonical dataframe.
+#' @seealso [user_df_from_libreview()] which will include exceptions.
 #' @import magrittr readr
 #' @param file the main file downloaded from a Libreview practice ID
-user_df_from_csv <- function(file = file.path(config::get("tastermonial")$datadir, "Tastermonial_allPatients_dashboard.csv")){
+user_df_from_libreview_csv <- function(file = file.path(config::get("tastermonial")$datadir, "Tastermonial_allPatients_dashboard.csv")){
   user_df <- readr::read_csv(file = file,
                              skip =1,
                              col_types = readr::cols()) %>%
@@ -44,14 +48,17 @@ user_df_from_csv <- function(file = file.path(config::get("tastermonial")$datadi
 #' @title Users known to Libreview Practice Portal
 #' @description Libreview Practice Portal offers a complete list of the names
 #' of users who have submitted glucose reports.
+#' You should rarely, if ever, need to call this except when setting up or modifying the database.
 #' @import magrittr dplyr
+#' @seealso [user_df_from_librevew_csv()] for the basic version,
+#' [user_df_from_db()] is the one you should almost always call instead of this.
 #' @return A dataframe of all users and their ids, taken from the Libreview practice portal
 #' @export
 user_df_from_libreview <- function() {
   extra_user_df <- readr::read_csv(file = file.path(config::get("tastermonial")$datadir, "Tastermonial_Extra_Users.csv"),
                             col_types = "cccccd") %>% dplyr::mutate(birthdate = lubridate::mdy(birthdate))
 
-  user_df_from_csv() %>% dplyr::mutate(user_id = dplyr::row_number() + 1000) %>%
+  user_df_from_libreview_csv() %>% dplyr::mutate(user_id = dplyr::row_number() + 1000) %>%
   dplyr::anti_join(extra_user_df,
                    by = c("first_name", "last_name")) %>% dplyr::bind_rows(extra_user_df)
 
@@ -91,10 +98,12 @@ name_for_user_id <- function(user_id) {
   ID = user_id
   if (ID == 0) return("Unknown Name")
   else
-    user_df_from_libreview() %>% dplyr::filter(user_id == ID)  %>%
+    user_df_from_db() %>% dplyr::filter(user_id == ID)  %>%
     select(first_name,last_name) %>%
     as.character() %>%
     stringr::str_flatten(collapse = " ")
+
+
 
 }
 
@@ -124,7 +133,7 @@ user_id_for_name <- function(name) {
   name_split <- stringr::str_split(name, pattern = " ", simplify = TRUE)
   first <- dplyr::first(name_split)
   last <- paste(name_split[-1], collapse=" ")
-  ID <- user_df_from_libreview() %>% dplyr::filter(first_name == first &
+  ID <- user_df_from_db() %>% dplyr::filter(first_name == first &
                                        stringr::str_detect(last_name, last)) %>%
     dplyr::pull(user_id)
   return(if(length(ID)>0) ID else NULL)
