@@ -3,8 +3,7 @@
 active_env <- Sys.getenv("R_CONFIG_ACTIVE")
 Sys.setenv(R_CONFIG_ACTIVE = "localtest")
 
-
-users <- user_df_from_libreview()
+users <- user_df_from_db() #user_df_from_libreview(file = file.path(config::get("tastermonial")$datadir, "Tastermonial_Extra_Users.csv"))
 
 test_that("username lookup from database", {
   expect_equal(user_id_for_name("Richard Sp"), 1234)

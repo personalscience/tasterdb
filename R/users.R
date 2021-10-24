@@ -52,11 +52,11 @@ user_df_from_libreview_csv <- function(file = file.path(config::get("tastermonia
 #' @import magrittr dplyr
 #' @seealso [user_df_from_librevew_csv()] for the basic version,
 #' [user_df_from_db()] is the one you should almost always call instead of this.
+#' @param file path to a CSV file containing data for users not included in the directory.
 #' @return A dataframe of all users and their ids, taken from the Libreview practice portal
 #' @export
-user_df_from_libreview <- function() {
-  extra_user_df <- readr::read_csv(file = file.path(config::get("tastermonial")$datadir, "Tastermonial_Extra_Users.csv"),
-                            col_types = "cccccd") %>% dplyr::mutate(birthdate = lubridate::mdy(birthdate))
+user_df_from_libreview <- function(file = file.path(config::get("tastermonial")$datadir, "Tastermonial_Extra_Users.csv")) {
+  extra_user_df <- readr::read_csv(file, col_types = "cccccd") %>% dplyr::mutate(birthdate = lubridate::mdy(`birthdate`))
 
   user_df_from_libreview_csv() %>% dplyr::mutate(user_id = dplyr::row_number() + 1000) %>%
   dplyr::anti_join(extra_user_df,

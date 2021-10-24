@@ -1,6 +1,6 @@
 Package: tasterdb
 Title: Create and Maintain Databases for Tastermonial Projects
-Version: 0.0.3.1
+Version: 0.0.3.2
 Authors@R: 
     person("Richard", "Sprague", , "sprague@personalscience.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-3789-5747"))

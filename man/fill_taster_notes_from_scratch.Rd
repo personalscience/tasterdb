@@ -9,6 +9,8 @@ fill_taster_notes_from_scratch(con, taster_notes_df, drop = TRUE)
 \arguments{
 \item{con}{database connection}
 
+\item{drop}{nuke current table and start over if \code{TRUE} (default)}
+
 \item{taster_note_df}{a notes dataframe}
 }
 \description{

@@ -4,7 +4,12 @@
 \alias{user_df_from_libreview}
 \title{Users known to Libreview Practice Portal}
 \usage{
-user_df_from_libreview()
+user_df_from_libreview(
+  file = file.path(config::get("tastermonial")$datadir, "Tastermonial_Extra_Users.csv")
+)
+}
+\arguments{
+\item{file}{path to a CSV file containing data for users not included in the directory.}
 }
 \value{
 A dataframe of all users and their ids, taken from the Libreview practice portal

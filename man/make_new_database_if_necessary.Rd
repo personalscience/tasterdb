@@ -6,7 +6,7 @@
 \usage{
 make_new_database_if_necessary(
   conn_args = config::get("dataconnection"),
-  dbname,
+  db_name,
   drop = FALSE,
   force = FALSE
 )
@@ -14,7 +14,7 @@ make_new_database_if_necessary(
 \arguments{
 \item{conn_args}{connection}
 
-\item{dbname}{character string name for proposed new database}
+\item{db_name}{character string name for proposed new database}
 
 \item{drop}{Nuke a database with this name if it already exists (default = \code{FALSE})}
 

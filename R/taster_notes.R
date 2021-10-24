@@ -43,6 +43,7 @@ id_from_initial <- function(name_initials) {
 }
 
 #' @title usernames
+#' @param taster_raw_data the CSV downloaded from retool
 taster_usernames <- function(taster_raw_data) {
   map(taster_raw_data, function(x) {unlist(jsonlite::fromJSON(x)[["name"]])}) %>% unlist() %>% str_trim() %>% unique()
 }
@@ -108,6 +109,7 @@ taster_classify_food <- function(foodname) {
 
 #' @title Fill all Tastermonial notes
 #' @param con database connection
+#' @param drop nuke current table and start over if `TRUE` (default)
 #' @importFrom magrittr %>%
 #' @param taster_note_df a notes dataframe
 fill_taster_notes_from_scratch <- function(con, taster_notes_df, drop = TRUE) {
@@ -121,7 +123,7 @@ fill_taster_notes_from_scratch <- function(con, taster_notes_df, drop = TRUE) {
 
   DBI::dbWriteTable(con, "notes_records", taster_notes_df, append = TRUE)
   message("wrote Taster Notes")
-  tbl(con, "notes_records") %>% distinct(user_id)
+  tbl(con, "notes_records") %>% distinct(`user_id`)
 
 
 }

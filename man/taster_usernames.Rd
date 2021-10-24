@@ -6,6 +6,9 @@
 \usage{
 taster_usernames(taster_raw_data)
 }
+\arguments{
+\item{taster_raw_data}{the CSV downloaded from retool}
+}
 \description{
 usernames
 }

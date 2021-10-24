@@ -15,7 +15,7 @@ load_db <- function(ps_database = "sandbox"){
   db <- taster_db(ps_database)
 
   # First build the user_list of all users known to the system (and their user_id)
-  write_user_list_from_scratch(con=db$con)
+  write_user_list_from_scratch(con=db$con, user_list = user_df_from_libreview())
 
 # need an exception for a user who's not on the portal
 
