@@ -215,3 +215,14 @@ run_taster_notes <- function(){
 
   return(taster_notes_df)
 }
+
+#' @title make a dataframe for experiments
+#' @description Currently just reads the experiments as written to a CSV
+#' Ideally this lets you generate a new CSV as appropriate
+#' Needs to be filled in with code that reads a list of
+#' experiments and prepares them for writing to the database
+experiment_df <- function(filepath = file.path(config::get("tastermonial")$datadir, "tastermonial_experiments.csv")){
+
+  exp_csv <- readr::read_csv(filepath)
+  return(exp_csv)
+}
