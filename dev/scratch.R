@@ -6,15 +6,30 @@ Sys.setenv(R_CONFIG_ACTIVE = "sandbox")
 
 config::get()$dataconnection$dbname
 
-# conn_args <- config::get("dataconnection")
-# con <- DBI::dbConnect(
-#   drv = conn_args$driver,
-#   user = conn_args$user,
-#   host = conn_args$host,
-#   port = conn_args$port,
-#   dbname = conn_args$dbname,
-#   password = conn_args$password
-# )
+conn_args <- config::get("dataconnection")
+con <- DBI::dbConnect(
+  drv = conn_args$driver,
+  user = conn_args$user,
+  host = conn_args$host,
+  port = conn_args$port,
+  dbname = conn_args$dbname,
+  password = conn_args$password
+)
+
+conn_args
+
+
+
+
+make_new_database_if_necessary("sandboxdb", drop=TRUE)
+
+
+new_db_sql <-
+  sprintf(
+    "CREATE DATABASE %s WITH OWNER = %s ENCODING = 'UTF8' CONNECTION LIMIT = -1;",
+    conn_args$dbname,
+    "postgres"
+  )
 
 ldb <- load_db("local")
 # clif_start <- ldb$table_df("notes_records") %>% filter(user_id == 1003) %>% filter(str_detect(Comment,"Clif")) %>% pull(Start) %>% last()
@@ -27,18 +42,18 @@ ldb <- load_db("local")
 #
 # lshiny <- load_db("shinyapps")
 
-old <- taster_old_typeform()
-old %>% filter(user_id == 1502) %>% arrange(Comment) %>% print(n= Inf)
-exceptions <- read_csv(file.path(config::get("tastermonial")$datadir,"Tastermonial_Exceptions.csv")) %>% mutate(fullname=paste(first_name, last_name))
-
-old$username <- old$user_id %>% map_chr(function(x) {name_for_user_id(x)}) #%>% group_by(user_id) %>% distinct(username)
-
-old %>% filter(username %in% exceptions$fullname) %>% mutate(tz = exceptions$timezone)
-
-old %>% group_by(user_id) %>% distinct(username)
-
-old$Start
-notes <- run_taster_notes()
+# old <- taster_old_typeform()
+# old %>% filter(user_id == 1502) %>% arrange(Comment) %>% print(n= Inf)
+# exceptions <- read_csv(file.path(config::get("tastermonial")$datadir,"Tastermonial_Exceptions.csv")) %>% mutate(fullname=paste(first_name, last_name))
+#
+# old$username <- old$user_id %>% map_chr(function(x) {name_for_user_id(x)}) #%>% group_by(user_id) %>% distinct(username)
+#
+# old %>% filter(username %in% exceptions$fullname) %>% mutate(tz = exceptions$timezone)
+#
+# old %>% group_by(user_id) %>% distinct(username)
+#
+# old$Start
+# notes <- run_taster_notes()
 
 # db <- taster_db("sandbox")
 # db$table_df("user_list")

@@ -2,7 +2,7 @@
 % Please edit documentation in R/db_load.R
 \name{load_db}
 \alias{load_db}
-\title{Load Libreview glucose files from scratch}
+\title{Crate a taster_db object and load all available Libreview glucose files from scratch}
 \usage{
 load_db(ps_database = "sandbox")
 }
@@ -10,5 +10,5 @@ load_db(ps_database = "sandbox")
 \item{ps_database}{name of Postgres SQL catalog (aka database)}
 }
 \description{
-Load Libreview glucose files from scratch
+Crate a taster_db object and load all available Libreview glucose files from scratch
 }

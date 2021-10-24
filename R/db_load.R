@@ -7,7 +7,7 @@
 # Sys.setenv(R_CONFIG_ACTIVE = "localtest") # a database useful for testing
 
 
-#' @title Load Libreview glucose files from scratch
+#' @title Crate a taster_db object and load all available Libreview glucose files from scratch
 #' @param ps_database name of Postgres SQL catalog (aka database)
 #' @export
 load_db <- function(ps_database = "sandbox"){

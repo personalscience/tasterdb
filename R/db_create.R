@@ -72,7 +72,7 @@ taster_db <- function(db_config = "default") {
             CONNECTION LIMIT = -1;"
     )
 
-  ## Add a new database "qsdb" if none exists on this server
+  ## Add a new database named with the value of conn_args$dbname if none exists on this server
   if (conn_args$dbname %in%
       DBI::dbGetQuery(con, "SELECT datname FROM pg_database WHERE datistemplate = false;")$datname)
   { message("database already exists")
@@ -146,6 +146,71 @@ taster_db <- function(db_config = "default") {
 }
 
 
+#' @title Create or delete a new database as required
+#' @description Intended for situations where you want to start all over,
+#' this function will use direct SQL calls to either create a brand new database
+#' or, if optionally `drop=TRUE`, wipe out any existing database.
+#' IMPORTANT: database connection is dropped regardless, so if you need a connection,
+#' be sure reconnect.
+#' @param conn_args connection
+#' @param db_name character string name for proposed new database
+#' @param drop Nuke a database with this name if it already exists (default = `FALSE`)
+#' @param force override the warning about creating a database with the magic name `qsdb` (default = `FALSE`)
+make_new_database_if_necessary <- function(conn_args = config::get("dataconnection"),
+                                           db_name,
+                                           drop = FALSE,
+                                           force = FALSE) {
+
+
+  if(db_name=="qsdb") {
+    message("are you absolutely certain?")
+    message("I won't let you do this unless you call with the flag `force=TRUE`")
+
+    return(NULL)
+  }
+  con <- DBI::dbConnect(
+    drv = conn_args$driver,
+    user = conn_args$user,
+    host = conn_args$host,
+    port = conn_args$port,
+    # dbname = conn_args$dbname,
+    password = conn_args$password
+  )
+
+
+  new_db_sql <-
+    sprintf(
+      "CREATE DATABASE %s WITH OWNER = %s ENCODING = 'UTF8' CONNECTION LIMIT = -1;",
+      db_name,
+      "postgres"
+    )
+
+  nuke_db_sql <-  sprintf(
+    "DROP DATABASE IF EXISTS %s;",
+    db_name
+  )
+
+  if (db_name %in% DBI::dbGetQuery(con,
+                                  "SELECT datname FROM pg_database WHERE datistemplate = false;")$datname)
+  {    message(sprintf("found database %s", db_name))
+    if (drop) {
+
+      message(sprintf("Nuking %s",  db_name))
+      rs <- DBI::dbSendStatement(con, nuke_db_sql)
+      DBI::dbClearResult(rs)
+    }
+    else  message(sprintf("But I'll do nothing about it"))
+
+  }
+  else   {message(sprintf("no database named %s", db_name))
+    if (drop) {
+      message(sprintf("I'll make a new one named %s", db_name))
+      rs <- DBI::dbSendStatement(con, new_db_sql)
+      DBI::dbClearResult(rs)
+    }
+  }
+  DBI::dbDisconnect(con)
+}
 
 
 #' @title Make new database tables if necessary
