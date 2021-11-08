@@ -2,7 +2,8 @@
 # https://cynkra.github.io/dm/articles/dm.html
 
 #Sys.setenv(R_CONFIG_ACTIVE = "local")
-Sys.setenv(R_CONFIG_ACTIVE = "sandbox")
+#Sys.setenv(R_CONFIG_ACTIVE = "sandbox")
+Sys.setenv(R_CONFIG_ACTIVE = "sqldb")
 
 config::get()$dataconnection$dbname
 
@@ -19,9 +20,9 @@ con <- DBI::dbConnect(
 conn_args
 
 
+taster_db(db_config="sqldb")
 
-
-make_new_database_if_necessary("sandboxdb", drop=TRUE)
+make_new_database_if_necessary(db_name = "mydb", drop=TRUE)
 
 
 new_db_sql <-
@@ -31,7 +32,13 @@ new_db_sql <-
     "postgres"
   )
 
-ldb <- load_db("local")
+config::get()
+
+
+# ldb <- load_db("local")
+# sdb <- load_db("shinyapps")
+
+
 # clif_start <- ldb$table_df("notes_records") %>% filter(user_id == 1003) %>% filter(str_detect(Comment,"Clif")) %>% pull(Start) %>% last()
 #
 # ldb$glucose_records %>% filter(user_id == 1003) %>% filter(time >= clif_start) %>% collect() %>% filter(time <= (clif_start + lubridate::minutes(120)))

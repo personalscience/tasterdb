@@ -61,6 +61,8 @@ taster_db <- function(db_config = "default") {
   USER_DATA_FRAME <-
     tibble(first_name = "first", last_name = "last", birthdate = as.Date("1900-01-01"), libreview_status = as.character(NA), user_id = 0)
 
+
+  if (class(con) == "PqConnection"){
   newdb_sqlstring <-
     paste0(
       "CREATE DATABASE ",
@@ -80,6 +82,7 @@ taster_db <- function(db_config = "default") {
 
   } else {
     DBI::dbSendQuery(con, newdb_sqlstring)
+  }
   }
 
   con <- DBI::dbConnect(
@@ -167,6 +170,14 @@ make_new_database_if_necessary <- function(conn_args = config::get("dataconnecti
     message("I won't let you do this unless you call with the flag `force=TRUE`")
 
     return(NULL)
+  }
+
+  if(class(conn_args$driver) == "SQLiteDriver") {
+    con <- DBI::dbConnect(
+      drv = conn_args$driver,
+      dbname = conn_args$dbname
+    )
+    return(con)
   }
   con <- DBI::dbConnect(
     drv = conn_args$driver,
