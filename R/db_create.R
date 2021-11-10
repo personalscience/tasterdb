@@ -1,6 +1,5 @@
 # create_db
 #
-# Use this script only once: to set up the initial database and scheme
 # If your Postgres database is already set up and running, you should be able to simply 'source' this script
 # and it will automatically create the database 'qsdev' and a table 'glucose_records'
 # Note: nothing bad should happen if you source this on an existing database (i.e. nothing will happen)
@@ -8,23 +7,6 @@
 # WARNING: Be sure you know the value of R_CONFIG_ACTIVE before running this script.
 # It will blindly create whatever database is in config::get("dataconnection")
 #
-# library(tidyverse)
-#
-# GLUCOSE_LAZY_FRAME <- dbplyr::tbl_lazy(tibble(time=lubridate::now(),
-#                                          scan = 0.0,
-#                                          hist = 0.0,
-#                                          strip = 0.0,
-#                                          value = 0.0,
-#                                          food = "",
-#                                          user_id = 0.0),
-#                                        con = dbplyr::simulate_postgres())
-# GLUCOSE_DATA_FRAME <-
-#   tibble(time=lubridate::now(), scan = 0.0, hist = 0.0, strip = 0.0, value = 0.0, food = "", user_id = 0.0)
-# NOTES_DATA_FRAME <-
-#   tibble(Start=lubridate::now(), End =lubridate::now(), Activity = "Event", Comment = NA, Z = NA, user_id = 0)
-# USER_DATA_FRAME <-
-#   tibble(first_name = "first", last_name = "last", birthdate = as.Date("1900-01-01"), libreview_status = as.character(NA), user_id = 0)
-
 # set the active configuration globally via Renviron.site or Rprofile.site
 # Sys.setenv(R_CONFIG_ACTIVE = "tastercloud")
 #Sys.setenv(R_CONFIG_ACTIVE = "local")  # save to local postgres

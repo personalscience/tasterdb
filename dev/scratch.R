@@ -3,6 +3,7 @@
 
 #Sys.setenv(R_CONFIG_ACTIVE = "local")
 #Sys.setenv(R_CONFIG_ACTIVE = "sandbox")
+Sys.setenv(R_CONFIG_ACTIVE = "shinyapps")
 Sys.setenv(R_CONFIG_ACTIVE = "sqldb")
 
 config::get()$dataconnection$dbname
@@ -19,18 +20,28 @@ con <- DBI::dbConnect(
 
 conn_args
 
+local_db <- taster_db(db_config = "default")
+local_db$notes_records %>% count()
+
+sqldb <- taster_db(db_config = "sqldb")
+
+tbl(sqldb$con, "glucose_records") %>% count()
+tbl(local_db$con, "glucose_records") %>% count()
+
+cgmr::food_times_df(sqldb$table_df("glucose_records"),
+                    sqldb$notes_records_df(),
+                    foodname = "Clif Bar Chocolate")
+
+sqldb$notes_records_df()
 
 GLUCOSE_RECORDS <- tbl(con, "glucose_records") %>% collect()
 NOTES_RECORDS <- tbl(con, "notes_records") %>% collect()
 
- sdb <- taster_db(db_config="sqldb")
+sdb <- load_db(ps_database = "sqldb")
+pdb <- load_db(ps_database = "shinyapps")
 
-db_write_glucose(con, glucose_df= select(arrange(GLUCOSE_RECORDS[1:10,], time), -user_id), user_id = 1234, dry_run = TRUE)
-db_write_notes(con, notes_df= select(arrange(NOTES_RECORDS[1:5,],Start), -user_id), user_id = 1234, dry_run = TRUE)
 
-select(arrange(NOTES_RECORDS[1:75,],Start), -user_id)
-
-# ldb <- load_db("local")
+ ldb <- load_db(ps_database = "local")
 # sdb <- load_db("shinyapps")
 
 
