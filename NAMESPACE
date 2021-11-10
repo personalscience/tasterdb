@@ -2,6 +2,7 @@
 
 export(id_from_taster)
 export(load_db)
+export(load_db_efficient)
 export(load_libreview_csv_from_directory)
 export(load_nutrisense_csv_from_directory)
 export(name_for_user_id)

@@ -17,15 +17,28 @@ load_db <- function(ps_database = "sandbox"){
   # First build the user_list of all users known to the system (and their user_id)
   write_user_list_from_scratch(con=db$con, user_list = user_df_from_libreview())
 
-# need an exception for a user who's not on the portal
+  fill_glucose_records_from_scratch(con = db$con)
+
+  fill_taster_notes_from_scratch(con = db$con, taster_notes_df = run_taster_notes())
+
+  nutrisense_glucose <- load_nutrisense_csv_from_directory()
+  message("write nutrisense records to glucose_records")
+  DBI::dbWriteTable(db$con, "glucose_records", nutrisense_glucose, append = TRUE)
 
 
-  # psi_user_list_from_scratch(user_list = tibble(first_name = "Anthony", last_name = "Davis", birthdate=as.Date("1900-01-01"),
-  #                                               libreview_status = NA,
-  #                                               user_id = 1021),
-  #                            drop = FALSE)
-  #
+  return(db)
 
+}
+
+#' @title Create a taster_db object and load all available Libreview glucose files from scratch
+#' @param db_name name of Postgres SQL catalog (aka database)
+#' @export
+load_db_efficient <- function(db_name = "sqldb"){
+
+  db <- taster_db(db_name)
+
+  # First build the user_list of all users known to the system (and their user_id)
+  write_user_list_from_scratch(con=db$con, user_list = user_df_from_libreview())
 
   fill_glucose_records_from_scratch(con = db$con)
 
@@ -92,7 +105,7 @@ psi_write_glucose <- function(conn_args = config::get("dataconnection"),
 
 
 
-  message("write glucose records")
+  message(sprintf("write %d glucose records\n", nrow(new_records)))
 
   # uncomment the following line to do the actual write to db
   DBI::dbWriteTable(con, name = "glucose_records", value = new_records, row.names = FALSE, append = TRUE)

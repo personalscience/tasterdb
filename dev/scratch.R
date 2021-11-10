@@ -20,20 +20,15 @@ con <- DBI::dbConnect(
 conn_args
 
 
-taster_db(db_config="sqldb")
+GLUCOSE_RECORDS <- tbl(con, "glucose_records") %>% collect()
+NOTES_RECORDS <- tbl(con, "notes_records") %>% collect()
 
-make_new_database_if_necessary(db_name = "mydb", drop=TRUE)
+ sdb <- taster_db(db_config="sqldb")
 
+db_write_glucose(con, glucose_df= select(arrange(GLUCOSE_RECORDS[1:10,], time), -user_id), user_id = 1234, dry_run = TRUE)
+db_write_notes(con, notes_df= select(arrange(NOTES_RECORDS[1:5,],Start), -user_id), user_id = 1234, dry_run = TRUE)
 
-new_db_sql <-
-  sprintf(
-    "CREATE DATABASE %s WITH OWNER = %s ENCODING = 'UTF8' CONNECTION LIMIT = -1;",
-    conn_args$dbname,
-    "postgres"
-  )
-
-config::get()
-
+select(arrange(NOTES_RECORDS[1:75,],Start), -user_id)
 
 # ldb <- load_db("local")
 # sdb <- load_db("shinyapps")
