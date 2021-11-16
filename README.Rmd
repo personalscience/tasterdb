@@ -37,7 +37,7 @@ To load all the Tastermonial database tables for the local configuration:
 
 ```{r example, eval = FALSE}
 library(tasterdb)
-local_db <- load_db("local")
+local_db <- load_db(db_config = "default")
 
 ```
 
@@ -50,6 +50,13 @@ local_db$disconnect() # disconnect from the database. After this you should `rm(
 
 ```
 
+A Sqlite version of the database is also available
+
+```{r sqliteExample, eval = FALSE}
+
+sqlite_db <- taster_db(db_config = "sqldb")
+
+```
 
 ## Configuration
 
@@ -100,15 +107,13 @@ config::get("tastermonial")$datadir
 This data directory should contain:
 
 -   All Libreview CSV files, exactly as downloaded from <https://libreview.com>. Any CSV file that includes "glucose" in the name will automatically read by the function `load_libreview_csv_from_directory()`.
--   Latest Tastermonial firebase output, stored in the file `table-data.csv`. 
+-   Latest Tastermonial firebase output, stored in the file `table-data.csv`.
 -   Miscellaneous other raw files including Nutrisense-formatted files.
 
-*Important*: The most important function is <not yet final>. Run this to drop and then load from scratch everything in the current database.
+*Important*: The most important function is `load_db()`. Run this to drop and then load from scratch everything in the current database.
 
-The very first time you set up a new Postgres database, run the function <not yet final>. It's okay to run this as many times as you like; it won't do anything if the database is already set up properly.
+The very first time you set up a new Postgres database, run the function `local_db <- taster_db(db_config = "default")`. It's okay to run this as many times as you like; it won't do anything if the database is already set up properly.
 
 ## Compile This Readme
 
 You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/master/examples>.
-
-

@@ -26,7 +26,7 @@ configuration:
 
 ``` r
 library(tasterdb)
-local_db <- load_db("local")
+local_db <- load_db(db_config = "default")
 ```
 
 Because the result is an object, it is strongly recommended to assign
@@ -36,6 +36,12 @@ various list methods on it, such as
 ``` r
 local_db$notes_records # returns a tibble of all notes_records
 local_db$disconnect() # disconnect from the database. After this you should `rm(local_db)`
+```
+
+A Sqlite version of the database is also available
+
+``` r
+sqlite_db <- taster_db(db_config = "sqldb")
 ```
 
 ## Configuration
@@ -97,12 +103,13 @@ This data directory should contain:
     `table-data.csv`.
 -   Miscellaneous other raw files including Nutrisense-formatted files.
 
-*Important*: The most important function is <not yet final>. Run this to
+*Important*: The most important function is `load_db()`. Run this to
 drop and then load from scratch everything in the current database.
 
 The very first time you set up a new Postgres database, run the function
-<not yet final>. It’s okay to run this as many times as you like; it
-won’t do anything if the database is already set up properly.
+`local_db <- taster_db(db_config = "default")`. It’s okay to run this as
+many times as you like; it won’t do anything if the database is already
+set up properly.
 
 ## Compile This Readme
 
