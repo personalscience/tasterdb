@@ -10,6 +10,12 @@ taster_from_retool_csv()
 dataframe
 }
 \description{
+The Tastermonial iPhone app sends each user scan to a database that I access
+through Retool, a site that lets you download all user data as a single CSV file,
+stored in the Tastermonial data directory as \code{table-data.csv}.  This function will read
+that csv file and return a valid \code{notes_records} dataframe.
 There's no need to correct for time zone because the Retool data is already
 timestamped with UTC.
+Important: Every food item read from Retool is converted into one of a limited number
+of "experiment" types based on the transformation table called in \code{taster_classify_food()}
 }

@@ -87,13 +87,18 @@ id_from_taster <- function(json_object) {
 #   transmute(pid = str_replace_all(pid, "\'",""),names,simpleName)
 
 
-#' Classify a Tastermonial food into limited categories
+#' @title Classify a Tastermonial food into limited categories
+#' @description Data from the Tastermonial Retool database (see `taster_from_retool_csv()`) is
+#' not standardized and can often be quite messy.  Before converting it to the `notes_records` format,
+#' this function will apply the transformation from `Tastermonial Name Mapping.csv` to
+#' return a canonical name for each food type.
 #' @param foodname a string representation of a name
 #' @importFrom magrittr %>%
 #' @return character string representing simplifed name
+#' @export
 taster_classify_food <- function(foodname) {
 
-  #' a CSV file with columns `pid`, `names`, and `simpleName` to convert from each format
+  # a CSV file with columns `pid`, `names`, and `simpleName` to convert from each format
   taster_names_convert_table <- read_csv(file=file.path(config::get("tastermonial")$datadir,
                                                         "Tastermonial Name Mapping.csv"), col_types = "cdcc") %>%
     mutate(name = Comment)
@@ -175,11 +180,18 @@ transform_old_typeform <- function() {
 }
 
 #' @title Read notes from the iPhone app csv
-#' @description There's no need to correct for time zone because the Retool data is already
+#' @description The Tastermonial iPhone app sends each user scan to a database that I access
+#' through Retool, a site that lets you download all user data as a single CSV file,
+#' stored in the Tastermonial data directory as `table-data.csv`.  This function will read
+#' that csv file and return a valid `notes_records` dataframe.
+#' There's no need to correct for time zone because the Retool data is already
 #' timestamped with UTC.
+#' Important: Every food item read from Retool is converted into one of a limited number
+#' of "experiment" types based on the transformation table called in `taster_classify_food()`
 #' @import  dplyr stringr lubridate
 #' @importFrom magrittr %>%
 #' @return dataframe
+#' @export
 taster_from_retool_csv <- function() {
   taster_raw_df <- taster_raw(filepath = file.path(config::get("tastermonial")$datadir, "table-data.csv"))
   taster_notes_df1 <- taster_raw_df %>% transmute(Start = lubridate::parse_date_time(startEatingDate,

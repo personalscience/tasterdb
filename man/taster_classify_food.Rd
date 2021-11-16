@@ -11,8 +11,10 @@ taster_classify_food(foodname)
 }
 \value{
 character string representing simplifed name
-a CSV file with columns \code{pid}, \code{names}, and \code{simpleName} to convert from each format
 }
 \description{
-Classify a Tastermonial food into limited categories
+Data from the Tastermonial Retool database (see \code{taster_from_retool_csv()}) is
+not standardized and can often be quite messy.  Before converting it to the \code{notes_records} format,
+this function will apply the transformation from \verb{Tastermonial Name Mapping.csv} to
+return a canonical name for each food type.
 }

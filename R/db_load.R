@@ -26,8 +26,35 @@ load_db <- function(ps_database = "sandbox"){
   DBI::dbWriteTable(db$con, "glucose_records", nutrisense_glucose, append = TRUE)
 
 
+
   return(db)
 
+}
+
+#' @title load extra items into database
+#' @description This is a hack function that loads the database with items that
+#' for whatever reason weren't loaded in the main `load_db()` function.
+#' Now it loads notes from one Libreview CSV file.
+#' @param con database connection
+#' @export
+load_db_extra <- function(con){
+  r_glucose <- cgmr::glucose_df_from_libreview_csv(file.path(config::get()$tastermonial$datadir,
+                                                             "RichardSprague_glucose_9-13-2021.csv")) %>%
+    lubridate::force_tz(time, tz= "America/Los_Angeles" )
+
+
+
+
+  r_notes <- r_glucose %>% cgmr::notes_df_from_glucose_table() %>% filter(Start > "2021-06-01")
+  r_notes$Comment <- map_chr(stringr::str_to_upper(r_notes$Comment), taster_classify_food)
+
+
+
+  DBI::dbWriteTable(con,
+                    name = "notes_records",
+                    value = r_notes,
+                    row.names = FALSE,
+                    append = TRUE)
 }
 
 #' @title Create a taster_db object and load all available Libreview glucose files from scratch
