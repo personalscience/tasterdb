@@ -1,9 +1,29 @@
 # reading notes
 
 
+#' Read
+
 #' Read a raw Tastermonial CGM log (as downloaded from retool)
 #' @param filepath path to a CSV download
-taster_raw <- function( filepath = file.path(config::get("tastermonial")$datadir, "table-data.csv")) {
+#' @param format Switch to choose old versions of the format
+taster_raw <- function( filepath = file.path(config::get("tastermonial")$datadir, "table-data.csv"),
+                        format = NULL) {
+
+  results_df <- if (!is.null(format)){
+    readr::read_csv(filepath, col_types = cols(
+      User = col_character(),
+      Email = col_character(),
+      `Scan time` = col_character(),
+      `Before tags` = col_character(),
+      `After tags` = col_character(),
+      Food = col_character(),
+      `Net Carb` = col_double(),
+      Fiber = col_double(),
+      `Start time` = col_character(),
+      `End time` = col_character(),
+      Notes = col_character()
+    ))
+  } else {
 
   readr::read_csv(filepath, col_types = cols(
     endEatingDate = col_character(),
@@ -26,6 +46,9 @@ taster_raw <- function( filepath = file.path(config::get("tastermonial")$datadir
     `_id` = col_character(),
     `__metadata` = col_character()
   ))
+  }
+
+  return(results_df)
 }
 
 #' @title find user_id from first few chars in a name
@@ -205,6 +228,63 @@ taster_from_retool_csv <- function() {
   taster_notes_df1$Comment <- map_chr(taster_notes_df1$Comment, taster_classify_food)
 
   return(taster_notes_df1)
+
+}
+
+#' @title Read notes from the iPhone app csv 2112 Version
+#' @description The Tastermonial iPhone app sends each user scan to a database that I access
+#' through Retool, a site that lets you download all user data as a single CSV file,
+#' stored in the Tastermonial data directory as `table-data.csv`.  This function will read
+#' that csv file and return a valid `notes_records` dataframe.
+#' There's no need to correct for time zone because the Retool data is already
+#' timestamped with UTC.
+#' Important: Every food item read from Retool is converted into one of a limited number
+#' of "experiment" types based on the transformation table called in `taster_classify_food()`
+#' @import  dplyr stringr lubridate
+#' @importFrom magrittr %>%
+#' @return dataframe
+#' @export
+taster_from_retool_csv_21 <- function(filepath =file.path(config::get("tastermonial")$datadir, "table-data-new.csv") ) {
+  taster_raw_df <- taster_raw(filepath = filepath,
+                              format = "21")
+  taster_notes_df1 <- taster_raw_df %>%
+    transmute(Start = lubridate::parse_date_time(`Start time`,
+                                                 orders = c("dmY HM p z", "dmY HM z")),
+              End = as_datetime(NA),
+              Activity = "Food",
+              Comment = str_to_upper(str_squish(str_replace_all(Food, "[^A-Za-z,]", " "))),
+              Z = as.numeric(NA),
+              user_id = purrr::map_dbl(User, id_from_initial))
+
+  #taster_notes_df1$Comment <- map_chr(taster_notes_df1$Comment, taster_classify_food)
+
+  return(taster_notes_df1)
+
+}
+
+#' Notes Dataframe From Specified User (2111 Format)
+#' @param filepath path to a CSV file in 2111 format
+#' @param username char string full name for user in CSV file
+notes_df_from_taster2111 <- function(filepath = file.path(config::get("tastermonial")$datadir,
+                                                          "table-data-new.csv"),
+                                     username = "Richard Sprague",
+                                     user_id = -1) {
+  taster_raw_df <- taster_raw(filepath = file.path(config::get("tastermonial")$datadir, "table-data-new.csv"),
+                              format = "21")
+
+  taster_user_df <- taster_raw_df %>% filter(User == username)
+
+  result <-  taster_user_df %>%
+    transmute(Start = lubridate::parse_date_time(`Start time`,
+                                                 orders = c("dmY HM p z", "dmY HM z")),
+              End = as_datetime(NA),
+              Activity = "Food",
+              Comment = str_to_upper(str_squish(str_replace_all(Food, "[^A-Za-z,]", " "))),
+              Z = as.numeric(NA),
+              user_id = user_id)
+
+
+  return(result)
 
 }
 

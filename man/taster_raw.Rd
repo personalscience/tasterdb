@@ -2,15 +2,20 @@
 % Please edit documentation in R/taster_notes.R
 \name{taster_raw}
 \alias{taster_raw}
-\title{Read a raw Tastermonial CGM log (as downloaded from retool)}
+\title{Read
+Read a raw Tastermonial CGM log (as downloaded from retool)}
 \usage{
 taster_raw(
-  filepath = file.path(config::get("tastermonial")$datadir, "table-data.csv")
+  filepath = file.path(config::get("tastermonial")$datadir, "table-data.csv"),
+  format = NULL
 )
 }
 \arguments{
 \item{filepath}{path to a CSV download}
+
+\item{format}{Switch to choose old versions of the format}
 }
 \description{
+Read
 Read a raw Tastermonial CGM log (as downloaded from retool)
 }
